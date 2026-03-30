@@ -1,0 +1,227 @@
+Build a modern, futuristic developer portfolio website for a software engineer named **Radiant**.
+
+TECH STACK
+
+* Next.js (App Router)
+* Tailwind CSS
+* Framer Motion for animations
+* React Three Fiber or Three.js for 3D background
+* shadcn/ui components
+* TypeScript
+* Responsive design for desktop and mobile
+
+DESIGN STYLE
+
+* Dark futuristic theme
+* Minimal but premium aesthetic
+* Glassmorphism cards
+* Soft neon glow accents
+* Smooth transitions
+* Interactive elements
+* Parallax scrolling
+* Floating 3D objects in background
+
+COLOR PALETTE
+Background: #0f172a
+Primary accent: #38bdf8
+Secondary glow: #a78bfa
+Card glass effect: rgba(255,255,255,0.05)
+Text: white with subtle gray secondary text
+
+FONTS
+Use modern developer style fonts such as Inter, Sora, or Space Grotesk.
+
+GENERAL EXPERIENCE
+When someone opens the page it should feel immersive and impressive.
+Include subtle particle movement, cursor-reactive animations, and smooth scrolling transitions.
+
+PAGE STRUCTURE
+
+1. HERO SECTION
+   Full screen landing section.
+
+Content:
+Radiant
+Full Stack Engineer
+
+Subtitle:
+"I build scalable systems, cloud infrastructure, and intelligent software."
+
+Include:
+
+* animated gradient background
+* floating 3D object or particle field
+* subtle mouse interaction
+* smooth fade-in text animations
+
+Buttons:
+
+* View Projects
+* GitHub
+* Contact
+
+Buttons should have glowing hover effects.
+
+2. ABOUT SECTION
+   Short introduction describing Radiant.
+
+Example content:
+Radiant is a full-stack developer focused on building scalable web applications, backend architecture, and cloud-based systems. Passionate about engineering clean systems, automation, and intelligent software.
+
+Add animated appearance when scrolling into view.
+
+3. SKILLS SECTION
+   Display skills using animated cards with hover tilt effects.
+
+Categories:
+
+Frontend
+React
+Next.js
+Tailwind CSS
+PrimeReact
+
+Backend
+Node.js
+Express
+NestJS
+TypeORM
+REST APIs
+
+Database
+PostgreSQL
+MySQL
+MongoDB
+MariaDB
+
+Cloud & DevOps
+AWS
+Docker
+CI/CD
+Linux
+
+AI & Data
+Time-series forecasting
+Flood prediction models
+LSTM experimentation
+
+Cards should glow slightly and lift in 3D on hover.
+
+4. PROJECTS SECTION (MOST IMPORTANT)
+
+Display projects in a responsive grid with animated cards.
+
+Projects:
+
+HR Management System
+Fullstack HR platform with authentication, employee management, attendance tracking, and admin dashboard.
+
+Voting Platform
+Secure voting system supporting large-scale participation with admin vote analytics.
+
+QR Shop System
+Retail system using QR scanning for product interactions.
+
+Flood Risk AI Predictor
+Combines satellite rainfall data and river discharge data with time-series forecasting to predict flood risk.
+
+Each project card must include:
+
+* preview image placeholder
+* tech stack tags
+* GitHub button
+* optional live demo button
+
+Cards should expand slightly on hover and show glowing borders.
+
+5. ENGINEERING JOURNEY / TIMELINE
+
+Vertical animated timeline.
+
+Example:
+
+2022
+Started learning programming and computer science fundamentals.
+
+2023
+Built first full-stack applications using React and Node.js.
+
+2024
+Developed scalable backend systems and database architectures.
+
+2025
+Exploring cloud engineering and AI forecasting systems.
+
+Animations should reveal timeline items while scrolling.
+
+6. GITHUB ACTIVITY SECTION
+
+Show GitHub stats style panel including:
+
+* contribution graph placeholder
+* repository stats
+* commit activity
+
+Design as a glass panel with glowing borders.
+
+7. CONTACT SECTION
+
+Minimal clean layout.
+
+Include:
+Email
+GitHub
+LinkedIn
+
+Add subtle animated underline hover effects.
+
+8. FOOTER
+
+Short statement:
+
+"Designed and built by Radiant."
+
+Include small animated gradient divider.
+
+ANIMATION REQUIREMENTS
+
+Use Framer Motion for:
+
+* scroll reveal animations
+* hover animations
+* hero text fade-in
+* card hover movement
+
+Use React Three Fiber or Three.js for:
+
+* animated particle background
+* floating geometric objects
+* subtle camera movement
+
+PERFORMANCE
+
+Ensure:
+
+* optimized animations
+* lazy loading for heavy assets
+* mobile responsiveness
+* smooth 60fps transitions
+
+OUTPUT
+
+Generate a complete Next.js project structure including:
+
+app/
+components/
+sections/
+styles/
+public/
+
+Include reusable components such as:
+Navbar
+ProjectCard
+SkillCard
+TimelineItem
+AnimatedBackground
+
+The final result should feel like a premium developer portfolio similar in quality to modern tech company websites.
