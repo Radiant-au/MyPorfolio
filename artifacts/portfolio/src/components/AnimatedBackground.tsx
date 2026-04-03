@@ -1,27 +1,29 @@
-import { useRef, useMemo, Suspense } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { useRef, useMemo, Suspense, useEffect, useState } from "react";
+import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import { Points, PointMaterial } from "@react-three/drei";
 import * as THREE from "three";
+import { TextureLoader } from "three";
 import { motion } from "framer-motion";
 
-function ParticleField() {
+/* ---------- Star field ---------- */
+function StarField() {
   const ref = useRef<THREE.Points>(null);
 
   const positions = useMemo(() => {
-    const count = 3000;
-    const positions = new Float32Array(count * 3);
+    const count = 4000;
+    const pos = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 20;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 20;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 20;
+      pos[i * 3]     = (Math.random() - 0.5) * 60;
+      pos[i * 3 + 1] = (Math.random() - 0.5) * 60;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 40 - 5;
     }
-    return positions;
+    return pos;
   }, []);
 
   useFrame((state) => {
     if (ref.current) {
-      ref.current.rotation.x = state.clock.elapsedTime * 0.03;
-      ref.current.rotation.y = state.clock.elapsedTime * 0.05;
+      ref.current.rotation.y = state.clock.elapsedTime * 0.008;
+      ref.current.rotation.x = state.clock.elapsedTime * 0.003;
     }
   });
 
@@ -29,105 +31,197 @@ function ParticleField() {
     <Points ref={ref} positions={positions} stride={3} frustumCulled={false}>
       <PointMaterial
         transparent
-        color="#38bdf8"
-        size={0.03}
-        sizeAttenuation={true}
+        color="#ffffff"
+        size={0.04}
+        sizeAttenuation
         depthWrite={false}
-        opacity={0.6}
+        opacity={0.8}
       />
     </Points>
   );
 }
 
-function FloatingGeometry() {
+/* ---------- Earth ---------- */
+function Earth() {
   const meshRef = useRef<THREE.Mesh>(null);
-  const mesh2Ref = useRef<THREE.Mesh>(null);
-  const mesh3Ref = useRef<THREE.Mesh>(null);
+  const glowRef = useRef<THREE.Mesh>(null);
+
+  const earthTexture = useLoader(TextureLoader, "/earth.jpg");
 
   useFrame((state) => {
-    const t = state.clock.elapsedTime;
     if (meshRef.current) {
-      meshRef.current.rotation.x = t * 0.4;
-      meshRef.current.rotation.y = t * 0.3;
-      meshRef.current.position.y = Math.sin(t * 0.5) * 0.3;
+      meshRef.current.rotation.y = state.clock.elapsedTime * 0.05;
     }
-    if (mesh2Ref.current) {
-      mesh2Ref.current.rotation.x = -t * 0.3;
-      mesh2Ref.current.rotation.z = t * 0.4;
-      mesh2Ref.current.position.y = Math.cos(t * 0.7) * 0.4;
-    }
-    if (mesh3Ref.current) {
-      mesh3Ref.current.rotation.y = t * 0.5;
-      mesh3Ref.current.rotation.z = t * 0.2;
-      mesh3Ref.current.position.x = Math.sin(t * 0.4) * 0.2;
+    if (glowRef.current) {
+      glowRef.current.rotation.y = state.clock.elapsedTime * 0.05;
     }
   });
 
   return (
+    <group position={[2.2, 0.5, -3]}>
+      {/* Earth sphere */}
+      <mesh ref={meshRef}>
+        <sphereGeometry args={[1.6, 64, 64]} />
+        <meshPhongMaterial
+          map={earthTexture}
+          specular={new THREE.Color(0x333333)}
+          shininess={15}
+        />
+      </mesh>
+
+      {/* Atmosphere glow */}
+      <mesh ref={glowRef} scale={1.08}>
+        <sphereGeometry args={[1.6, 32, 32]} />
+        <meshBasicMaterial
+          color="#4fc3f7"
+          transparent
+          opacity={0.08}
+          side={THREE.FrontSide}
+        />
+      </mesh>
+
+      {/* Outer glow */}
+      <mesh scale={1.18}>
+        <sphereGeometry args={[1.6, 32, 32]} />
+        <meshBasicMaterial
+          color="#1565c0"
+          transparent
+          opacity={0.04}
+          side={THREE.FrontSide}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+/* ---------- Shooting stars ---------- */
+interface ShootingStar {
+  start: THREE.Vector3;
+  dir: THREE.Vector3;
+  speed: number;
+  length: number;
+  progress: number;
+  delay: number;
+  active: boolean;
+}
+
+function ShootingStars() {
+  const linesRef = useRef<(THREE.Mesh | null)[]>([]);
+  const starsData = useRef<ShootingStar[]>([]);
+
+  const COUNT = 8;
+
+  const makestar = (): ShootingStar => ({
+    start: new THREE.Vector3(
+      (Math.random() - 0.5) * 20,
+      Math.random() * 8 + 2,
+      (Math.random() - 0.5) * 5 - 2
+    ),
+    dir: new THREE.Vector3(
+      -(Math.random() * 0.5 + 0.3),
+      -(Math.random() * 0.4 + 0.1),
+      0
+    ).normalize(),
+    speed: Math.random() * 4 + 3,
+    length: Math.random() * 1.5 + 0.5,
+    progress: 0,
+    delay: Math.random() * 6,
+    active: false,
+  });
+
+  useEffect(() => {
+    starsData.current = Array.from({ length: COUNT }, makestar);
+  }, []);
+
+  useFrame((state, delta) => {
+    starsData.current.forEach((star, i) => {
+      star.delay -= delta;
+      if (star.delay > 0) return;
+      star.active = true;
+      star.progress += delta * star.speed;
+
+      const mesh = linesRef.current[i];
+      if (!mesh) return;
+
+      const t = star.progress;
+      const pos = star.start.clone().addScaledVector(star.dir, t);
+
+      mesh.position.copy(pos);
+      mesh.lookAt(pos.clone().addScaledVector(star.dir, 1));
+
+      const opacity = Math.min(1, Math.min(t, (star.length * 4 - t)) / 0.5);
+      (mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, opacity);
+
+      if (star.progress > star.length * 4 + 2) {
+        Object.assign(star, makestar());
+        star.progress = 0;
+        star.delay = Math.random() * 4 + 1;
+        star.active = false;
+      }
+    });
+  });
+
+  return (
     <>
-      <mesh ref={meshRef} position={[3.5, 0.5, -2]}>
-        <octahedronGeometry args={[0.8]} />
-        <meshStandardMaterial color="#38bdf8" wireframe transparent opacity={0.3} />
-      </mesh>
-      <mesh ref={mesh2Ref} position={[-3.5, -0.5, -3]}>
-        <icosahedronGeometry args={[0.6]} />
-        <meshStandardMaterial color="#a78bfa" wireframe transparent opacity={0.3} />
-      </mesh>
-      <mesh ref={mesh3Ref} position={[0, -2, -4]}>
-        <torusGeometry args={[0.7, 0.2, 8, 24]} />
-        <meshStandardMaterial color="#38bdf8" wireframe transparent opacity={0.2} />
-      </mesh>
+      {Array.from({ length: COUNT }).map((_, i) => (
+        <mesh
+          key={i}
+          ref={(el) => { linesRef.current[i] = el; }}
+        >
+          <cylinderGeometry args={[0.006, 0.001, 1.2, 4]} />
+          <meshBasicMaterial
+            color="#a5d8ff"
+            transparent
+            opacity={0}
+            depthWrite={false}
+          />
+        </mesh>
+      ))}
     </>
   );
 }
 
-function ThreeScene() {
+/* ---------- Three.js Scene ---------- */
+function SpaceScene() {
   return (
     <Canvas
       camera={{ position: [0, 0, 5], fov: 60 }}
-      gl={{ antialias: false, alpha: true, failIfMajorPerformanceCaveat: false }}
+      gl={{ antialias: true, alpha: true, failIfMajorPerformanceCaveat: false }}
       dpr={[1, 1.5]}
-      onCreated={({ gl }) => {
-        gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      }}
     >
-      <ambientLight intensity={0.3} />
-      <pointLight position={[5, 5, 5]} intensity={0.5} color="#38bdf8" />
-      <pointLight position={[-5, -5, 3]} intensity={0.5} color="#a78bfa" />
+      <ambientLight intensity={0.15} />
+      <directionalLight position={[-8, 4, 3]} intensity={1.2} color="#fff5e0" />
+      <pointLight position={[0, 0, 5]} intensity={0.2} color="#4fc3f7" />
+
       <Suspense fallback={null}>
-        <ParticleField />
-        <FloatingGeometry />
+        <StarField />
+        <Earth />
+        <ShootingStars />
       </Suspense>
     </Canvas>
   );
 }
 
-function CSSFallbackBackground() {
+/* ---------- CSS Fallback ---------- */
+function CSSFallback() {
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* Floating dots via CSS */}
-      {Array.from({ length: 60 }).map((_, i) => (
+      {Array.from({ length: 80 }).map((_, i) => (
         <motion.div
           key={i}
-          className="absolute rounded-full"
+          className="absolute rounded-full bg-white"
           style={{
-            width: Math.random() * 3 + 1,
-            height: Math.random() * 3 + 1,
+            width: Math.random() * 2 + 1,
+            height: Math.random() * 2 + 1,
             left: `${Math.random() * 100}%`,
             top: `${Math.random() * 100}%`,
-            background: i % 3 === 0 ? "#38bdf8" : i % 3 === 1 ? "#a78bfa" : "#ffffff",
-            opacity: Math.random() * 0.4 + 0.1,
+            opacity: Math.random() * 0.6 + 0.2,
           }}
-          animate={{
-            y: [0, -30 - Math.random() * 40, 0],
-            x: [0, (Math.random() - 0.5) * 20, 0],
-            opacity: [0.1, 0.4, 0.1],
-          }}
+          animate={{ opacity: [0.2, 0.8, 0.2] }}
           transition={{
-            duration: 4 + Math.random() * 6,
+            duration: 2 + Math.random() * 4,
             repeat: Infinity,
-            delay: Math.random() * 5,
-            ease: "easeInOut",
+            delay: Math.random() * 4,
           }}
         />
       ))}
@@ -135,16 +229,7 @@ function CSSFallbackBackground() {
   );
 }
 
-function WebGLBackground() {
-  return (
-    <div className="absolute inset-0">
-      <ThreeScene />
-    </div>
-  );
-}
-
-class WebGLBoundary extends Error {}
-
+/* ---------- WebGL check ---------- */
 function isWebGLAvailable() {
   try {
     const canvas = document.createElement("canvas");
@@ -157,12 +242,79 @@ function isWebGLAvailable() {
   }
 }
 
+/* ---------- Floating Astronaut (CSS layer) ---------- */
+function FloatingAstronaut() {
+  return (
+    <motion.div
+      className="absolute z-10 select-none pointer-events-none"
+      style={{ left: "12%", top: "30%" }}
+      animate={{
+        y: [-12, 18, -12],
+        x: [0, 20, 40, 60, 80],
+        rotate: [-8, -2, 4, 8, 12],
+        opacity: [0, 1, 1, 1, 0],
+      }}
+      transition={{
+        duration: 22,
+        repeat: Infinity,
+        ease: "easeInOut",
+        times: [0, 0.1, 0.5, 0.9, 1],
+        repeatDelay: 6,
+      }}
+    >
+      <svg
+        width="56"
+        height="80"
+        viewBox="0 0 56 80"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ filter: "drop-shadow(0 0 10px rgba(79,195,247,0.5))" }}
+      >
+        {/* Helmet */}
+        <ellipse cx="28" cy="22" rx="14" ry="15" fill="#e8f4fd" opacity="0.95" />
+        <ellipse cx="28" cy="22" rx="13" ry="14" fill="#b3ddf5" opacity="0.6" />
+        {/* Visor */}
+        <ellipse cx="28" cy="22" rx="8" ry="7" fill="#1a237e" opacity="0.85" />
+        <ellipse cx="25" cy="19" rx="3" ry="2.5" fill="#4fc3f7" opacity="0.5" />
+        {/* Suit body */}
+        <rect x="16" y="34" width="24" height="26" rx="8" fill="#e0e0e0" opacity="0.95" />
+        {/* Chest pack */}
+        <rect x="20" y="37" width="16" height="10" rx="3" fill="#bdbdbd" />
+        <circle cx="24" cy="42" r="2" fill="#4fc3f7" opacity="0.8" />
+        <circle cx="28" cy="42" r="2" fill="#ef5350" opacity="0.8" />
+        <circle cx="32" cy="42" r="2" fill="#66bb6a" opacity="0.8" />
+        {/* Left arm */}
+        <path d="M16 38 Q6 45 8 54" stroke="#e0e0e0" strokeWidth="7" strokeLinecap="round" fill="none" />
+        <ellipse cx="8" cy="56" rx="4" ry="3" fill="#e0e0e0" />
+        {/* Right arm */}
+        <path d="M40 38 Q50 45 48 54" stroke="#e0e0e0" strokeWidth="7" strokeLinecap="round" fill="none" />
+        <ellipse cx="48" cy="56" rx="4" ry="3" fill="#e0e0e0" />
+        {/* Legs */}
+        <path d="M22 60 Q20 70 18 76" stroke="#e0e0e0" strokeWidth="7" strokeLinecap="round" fill="none" />
+        <ellipse cx="18" cy="77" rx="5" ry="3" fill="#bdbdbd" />
+        <path d="M34 60 Q36 70 38 76" stroke="#e0e0e0" strokeWidth="7" strokeLinecap="round" fill="none" />
+        <ellipse cx="38" cy="77" rx="5" ry="3" fill="#bdbdbd" />
+        {/* Tether */}
+        <path d="M16 45 Q4 38 0 30" stroke="#4fc3f7" strokeWidth="0.8" strokeDasharray="2 2" opacity="0.5" fill="none" />
+      </svg>
+    </motion.div>
+  );
+}
+
+/* ---------- Main export ---------- */
 export function AnimatedBackground() {
-  const webglAvailable = isWebGLAvailable();
+  const [webgl] = useState(() => isWebGLAvailable());
 
   return (
-    <div className="fixed inset-0 z-0 pointer-events-none">
-      {webglAvailable ? <WebGLBackground /> : <CSSFallbackBackground />}
+    <div className="fixed inset-0 z-0 pointer-events-none" style={{ background: "#020818" }}>
+      {webgl ? (
+        <div className="absolute inset-0">
+          <SpaceScene />
+        </div>
+      ) : (
+        <CSSFallback />
+      )}
+      <FloatingAstronaut />
     </div>
   );
 }
