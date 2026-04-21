@@ -1,5 +1,6 @@
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { Navbar } from "@/components/Navbar";
+import { ChatWidget } from "@/components/ChatWidget";
 import { Hero } from "@/sections/Hero";
 import { About } from "@/sections/About";
 import { Skills } from "@/sections/Skills";
@@ -26,6 +27,7 @@ function App() {
         </main>
         <Footer />
       </div>
+      <ChatWidget />
     </div>
   );
 }
